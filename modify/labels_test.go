@@ -1,4 +1,4 @@
-package main
+package modify
 
 import (
 	"github.com/prometheus/common/model"

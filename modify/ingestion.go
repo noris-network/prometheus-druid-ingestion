@@ -1,4 +1,4 @@
-package main
+package modify
 
 type KafkaIngestionSpec struct {
 	Type       string     `json:"type"`
