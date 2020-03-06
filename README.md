@@ -151,7 +151,20 @@ $ generate-ingestion -f ingestion.json
     "ioConfig": {
         "topic": "prometheus",
         "consumerProperties": {
-            "bootstrap.servers": "kafka01:9092,kafka02:9092,kafka03:9092"
+            "bootstrap.servers": "kafka01:9092,kafka02:9092,kafka03:9092",
+            "security.protocol": "SSL",
+            "ssl.truststore.type": "PKCS12",
+            "ssl.enabled.protocols": "TLSv1.2",
+            "ssl.truststore.location": "/var/private/ssl/truststore.p12",
+            "ssl.truststore.password": {
+                "type": "environment",
+                "variable": "DRUID_TRUSTSTORE_PASSWORD"
+            },
+            "ssl.keystore.location": "/var/private/ssl/keystore.p12",
+            "ssl.keystore.password": {
+                "type": "environment",
+                "variable": "DRUID_KEYSTORE_PASSWORD"
+            }
         },
         "taskDuration": "PT10M",
         "useEarliestOffset": true
