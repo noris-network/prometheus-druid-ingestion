@@ -57,6 +57,29 @@ and build an opinionated ingestion spec from those labels.
 > If all recording rules with the prefix `job:` are sent to [prometheus-kafka-adapter][pka] via `remote_write`,
 > the PromQL query `{__name__=~"job:.+"}` would retrieve those series.
 
+By default Druid will consume messages from Kafka via SSL, meaning the following block will
+be populated in the spec:
+
+```text
+            # ...
+            "security.protocol": "SSL",
+            "ssl.truststore.type": "PKCS12",
+            "ssl.enabled.protocols": "TLSv1.2",
+            "ssl.truststore.location": "/var/private/ssl/truststore.p12",
+            "ssl.truststore.password": {
+                "type": "environment",
+                "variable": "DRUID_TRUSTSTORE_PASSWORD"
+            },
+            "ssl.keystore.location": "/var/private/ssl/keystore.p12",
+            "ssl.keystore.password": {
+                "type": "environment",
+                "variable": "DRUID_KEYSTORE_PASSWORD"
+            }
+        },
+```
+
+This behaviour can be disabled with the `--ingest-via-ssl=false` flag.
+
 By default the ingestion spec is displayed to `stdout`, but can be saved with the `-f` flag:
 
 ```text

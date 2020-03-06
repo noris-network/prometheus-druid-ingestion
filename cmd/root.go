@@ -25,6 +25,7 @@ var (
 	druidDataSource = "prometheus"
 	kafkaTopic      = "prometheus"
 	kafkaBrokers    = "kafka01:9092,kafka02:9092,kafka03:9092"
+	ingestSSL       = true
 	rootCmd         = &cobra.Command{
 		Use:   "generate-ingestion",
 		Short: "Generate an Druid.io opinionated ingestion spec from a Prometheus query result",
@@ -42,6 +43,7 @@ func init() {
 	f.StringVarP(&druidDataSource, "druid-data-source", "d", druidDataSource, "The druid data source")
 	f.StringVarP(&kafkaTopic, "kafka-topic", "t", kafkaTopic, "The Kafka topic for druid to ingest data from")
 	f.StringVarP(&kafkaBrokers, "kafka-brokers", "b", kafkaBrokers, "The Kafka brokers for druid to ingest data from")
+	f.BoolVar(&ingestSSL, "ingest-via-ssl", ingestSSL, "Enables data ingestion from Kafka to Druid via SSL")
 }
 
 func Run() {
@@ -87,7 +89,13 @@ func run(cmd *cobra.Command, args []string) {
 		fmt.Printf("Error extracting labels: %v\n", err)
 		os.Exit(1)
 	}
-	spec := ingestion.NewKafkaIngestionSpec(druidDataSource, kafkaTopic, kafkaBrokers, l)
+
+	var opts []ingestion.KafkaIngestionSpecOptions
+	if ingestSSL {
+		opts = append(opts, ingestion.ApplySSLConfig)
+	}
+
+	spec := ingestion.NewKafkaIngestionSpec(druidDataSource, kafkaTopic, kafkaBrokers, l, opts...)
 	jsonSpec, err := json.MarshalIndent(spec, "", "    ")
 	if err != nil {
 		fmt.Printf("Error marshalling ingestion spec: %v\n", err)
