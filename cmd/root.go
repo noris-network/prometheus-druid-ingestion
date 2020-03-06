@@ -27,7 +27,7 @@ var (
 	kafkaBrokers    = "kafka01:9092,kafka02:9092,kafka03:9092"
 	rootCmd         = &cobra.Command{
 		Use:   "generate-ingestion",
-		Short: "Generate a Druid.io ingestion spec from a Prometheus query result",
+		Short: "Generate an Druid.io opinionated ingestion spec from a Prometheus query result",
 		Run:   run,
 	}
 )
@@ -98,6 +98,9 @@ func run(cmd *cobra.Command, args []string) {
 		fmt.Println(string(jsonSpec))
 	}
 	if outputFile != "" {
-		err = ioutil.WriteFile(outputFile, jsonSpec, os.FileMode(0644))
+		if err = ioutil.WriteFile(outputFile, jsonSpec, os.FileMode(0644)); err != nil {
+			fmt.Printf("Error writing %q: %v", outputFile, err)
+			os.Exit(1)
+		}
 	}
 }

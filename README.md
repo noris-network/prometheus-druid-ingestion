@@ -1,10 +1,33 @@
 # prometheus-kafka-druid-ingestion
 
 At [noris network](https://noris.de) we're sending Prometheus data via `[prometheus-kafka-adapter][pka] to 
-Kafka and then use [Apache Druid][druid]'s [Kafka Ingestion](https://druid.apache.org/docs/latest/development/extensions-core/kafka-ingestion.html)
+Kafka and then use [Apache Druid][druid]'s [Kafka Ingestion][kafka_ingestion]
 for storing those metrics.
 
-This repo creates an [Apache Druid][druid] [ingestion spec](https://druid.apache.org/docs/latest/ingestion/index.html) from [prometheus-kafka-adapter][pka] data.
+This repo creates an [Apache Druid][druid] [ingestion spec][ingestion_spec] from [prometheus-kafka-adapter][pka] data.
+
+## Background
+
+Prometheus data can be sent via [remote_write](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write) to 
+[prometheus-kafka-adapter][pka], which in turn sends it to Kafka. The prometheus-kafka-adapter message will have the following structure:
+
+```json
+{
+  "timestamp": "1970-01-01T00:00:00Z",
+  "value": "9876543210",
+  "name": "up",
+
+  "labels": {
+    "__name__": "up",
+    "label1": "value1",
+    "label2": "value2"
+  }
+}
+```
+
+This data can be send to [Apache Druid][druid] for long term storage, using Druid's [Kafka Ingestion][kafka_ingestion] feature. For the
+data to be consumed and saved, we need to create an [ingestion spec][ingestion_spec], including the final schema in the database
+and the Kafka brokers to consume the metrics from.
 
 ## Usage
 
@@ -30,6 +53,9 @@ $ generate-ingestion -h
 Executing the file sends the query specified with the `-q` / `--query` flag to a Prometheus server
 running at `-a` / `--address`. The script will then extract the unique labels of all time series returned
 and build an opinionated ingestion spec from those labels.
+
+> If all recording rules with the prefix `job:` are sent to [prometheus-kafka-adapter][pka] via `remote_write`,
+> the PromQL query `{__name__=~"job:.+"}` would retrieve those series.
 
 By default the ingestion spec is displayed to `stdout`, but can be saved with the `-f` flag:
 
@@ -112,3 +138,5 @@ $ generate-ingestion -f ingestion.json
 
 [pka]: https://github.com/Telefonica/prometheus-kafka-adapter
 [druid]: https://druid.apache.org
+[ingestion_spec]: https://druid.apache.org/docs/latest/ingestion/index.html
+[kafka_ingestion]: https://druid.apache.org/docs/latest/development/extensions-core/kafka-ingestion.html
