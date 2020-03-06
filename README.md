@@ -29,6 +29,18 @@ This data can be send to [Apache Druid][druid] for long term storage, using Drui
 data to be consumed and saved, we need to create an [ingestion spec][ingestion_spec], including the final schema in the database
 and the Kafka brokers to consume the metrics from.
 
+## Installtion
+
+### From Source
+
+Clone the repo and `cd` into it, then run make:
+
+```shell
+make build
+```
+
+The binary will be available in `bin/generate-ingestion`.
+
 ## Usage
 
 ```text

@@ -26,6 +26,6 @@ build:
 	GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -o $(OUTPUT) ./cmd
 
 .PHONY: build/docker
-## build/docker: builds the Docker iamge
+## build/docker: builds Docker iamge
 build/docker:
 	 docker build -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
