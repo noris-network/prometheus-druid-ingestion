@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	jsonComplete = `{
+	jsonBasic = `{
     "type": "kafka",
     "dataSchema": {
         "dataSource": "test",
@@ -79,62 +79,91 @@ var (
         "useEarliestOffset": true
     }
 }`
+	jsonSSL = `{
+    "type": "kafka",
+    "dataSchema": {
+        "dataSource": "test",
+        "parser": {
+            "type": "string",
+            "parseSpec": {
+                "format": "json",
+                "timestampSpec": {
+                    "column": "timestamp",
+                    "format": "iso"
+                },
+                "flattenSpec": {
+                    "fields": [
+                        {
+                            "type": "path",
+                            "name": "instance",
+                            "expr": "$.labels.instance"
+                        },
+                        {
+                            "type": "path",
+                            "name": "job",
+                            "expr": "$.labels.job"
+                        },
+                        {
+                            "type": "root",
+                            "name": "name",
+                            "expr": "name"
+                        },
+                        {
+                            "type": "root",
+                            "name": "value",
+                            "expr": "value"
+                        }
+                    ]
+                },
+                "dimensionsSpec": {
+                    "dimensions": [
+                        "name",
+                        "instance",
+                        "job"
+                    ]
+                }
+            }
+        },
+        "metricsSpec": [
+            {
+                "name": "count",
+                "type": "count"
+            },
+            {
+                "name": "value",
+                "type": "doubleMax",
+                "fieldName": "value"
+            }
+        ],
+        "granularitySpec": {
+            "type": "uniform",
+            "segmentGranularity": "HOUR",
+            "queryGranularity": "MINUTE"
+        }
+    },
+    "ioConfig": {
+        "topic": "test",
+        "consumerProperties": {
+            "bootstrap.servers": "test",
+            "security.protocol": "SSL",
+            "ssl.truststore.type": "PKCS12",
+            "ssl.enabled.protocols": "TLSv1.2",
+            "ssl.truststore.location": "/var/private/ssl/truststore.p12",
+            "ssl.truststore.password": {
+                "type": "environment",
+                "variable": "DRUID_TRUSTSTORE_PASSWORD"
+            },
+            "ssl.keystore.location": "/var/private/ssl/keystore.p12",
+            "ssl.keystore.password": {
+                "type": "environment",
+                "variable": "DRUID_KEYSTORE_PASSWORD"
+            }
+        },
+        "taskDuration": "PT10M",
+        "useEarliestOffset": true
+    }
+}`
 )
-
-func defaultKafkaIngestionSpec() *KafkaIngestionSpec {
-	return &KafkaIngestionSpec{
-		Type: "kafka",
-		DataSchema: DataSchema{
-			DataSource: "test",
-			Parser: Parser{
-				Type: "string",
-				ParseSpec: ParseSpec{
-					Format: "json",
-					TimeStampSpec: TimestampSpec{
-						Column: "timestamp",
-						Format: "iso",
-					},
-					FlattenSpec: FlattenSpec{
-						Fields: FieldList{
-							Field{
-								Type: "test",
-								Name: "test",
-								Expr: "test",
-							},
-						},
-					},
-					DimensionsSpec: DimensionsSpec{
-						Dimensions: []string{"test"},
-					},
-				},
-			},
-			MetricsSpec: []Metric{
-				{
-					Name: "count",
-					Type: "count",
-				},
-				{
-					Name:      "value",
-					FieldName: "value",
-					Type:      "doubleMax",
-				},
-			},
-			GranularitySpec: GranularitySpec{
-				Type:               "uniform",
-				SegmentGranularity: "HOUR",
-				QueryGranularity:   "MINUTE",
-			},
-		},
-		IOConfig: IOConfig{
-			Topic: "test",
-			ConsumerProperties: ConsumerProperties{
-				BootstrapServers: "test",
-			},
-			TaskDuration:      "PT10M",
-			UseEarliestOffset: true,
-		},
-	}
-}
 
 func TestKafkaIngestionSpec(t *testing.T) {
 	var testData = []struct {
@@ -143,6 +172,7 @@ func TestKafkaIngestionSpec(t *testing.T) {
 		topic      string
 		brokers    string
 		labels     LabelSet
+		options    []KafkaIngestionSpecOptions
 		expected   *KafkaIngestionSpec
 	}{
 		{
@@ -155,6 +185,39 @@ func TestKafkaIngestionSpec(t *testing.T) {
 				out := defaultKafkaIngestionSpec()
 				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{}
 				out.DataSchema.Parser.ParseSpec.DimensionsSpec.Dimensions = []string{}
+				out.DataSchema.DataSource = "test"
+				out.IOConfig.Topic = "test"
+				out.IOConfig.ConsumerProperties.BootstrapServers = "test"
+				return out
+			}(),
+		},
+		{
+			name:       "empty labels, ssl options",
+			dataSource: "test",
+			topic:      "test",
+			brokers:    "test",
+			labels:     LabelSet{},
+			options:    []KafkaIngestionSpecOptions{ApplySSLConfig},
+			expected: func() *KafkaIngestionSpec {
+				out := defaultKafkaIngestionSpec()
+				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{}
+				out.DataSchema.Parser.ParseSpec.DimensionsSpec.Dimensions = []string{}
+				out.DataSchema.DataSource = "test"
+				out.IOConfig.Topic = "test"
+				out.IOConfig.ConsumerProperties.BootstrapServers = "test"
+				out.IOConfig.ConsumerProperties.SecurityProtocol = stringPointer("SSL")
+				out.IOConfig.ConsumerProperties.SSLTruststoreType = stringPointer("PKCS12")
+				out.IOConfig.ConsumerProperties.SSLEnabledProtocols = stringPointer("TLSv1.2")
+				out.IOConfig.ConsumerProperties.SSLTruststoreLocation = stringPointer("/var/private/ssl/truststore.p12")
+				out.IOConfig.ConsumerProperties.SSLTruststorePassword = &DruidPasswordProvider{
+					Type:     "environment",
+					Variable: "DRUID_TRUSTSTORE_PASSWORD",
+				}
+				out.IOConfig.ConsumerProperties.SSLKeystoreLocation = stringPointer("/var/private/ssl/keystore.p12")
+				out.IOConfig.ConsumerProperties.SSLKeystorePassword = &DruidPasswordProvider{
+					Type:     "environment",
+					Variable: "DRUID_KEYSTORE_PASSWORD",
+				}
 				return out
 			}(),
 		},
@@ -184,15 +247,19 @@ func TestKafkaIngestionSpec(t *testing.T) {
 					},
 				}
 				out.DataSchema.Parser.ParseSpec.DimensionsSpec.Dimensions = []string{"name", "foo"}
+				out.DataSchema.DataSource = "test"
+				out.IOConfig.Topic = "test"
+				out.IOConfig.ConsumerProperties.BootstrapServers = "test"
 				return out
 			}(),
 		},
 		{
-			name:       "multiple labels",
+			name:       "multiple labels, ssl config",
 			dataSource: "test",
 			topic:      "test",
 			brokers:    "test",
 			labels:     LabelSet{"foo", "bar"},
+			options:    []KafkaIngestionSpecOptions{ApplySSLConfig},
 			expected: func() *KafkaIngestionSpec {
 				out := defaultKafkaIngestionSpec()
 				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{
@@ -218,6 +285,22 @@ func TestKafkaIngestionSpec(t *testing.T) {
 					},
 				}
 				out.DataSchema.Parser.ParseSpec.DimensionsSpec.Dimensions = []string{"name", "foo", "bar"}
+				out.DataSchema.DataSource = "test"
+				out.IOConfig.Topic = "test"
+				out.IOConfig.ConsumerProperties.BootstrapServers = "test"
+				out.IOConfig.ConsumerProperties.SecurityProtocol = stringPointer("SSL")
+				out.IOConfig.ConsumerProperties.SSLTruststoreType = stringPointer("PKCS12")
+				out.IOConfig.ConsumerProperties.SSLEnabledProtocols = stringPointer("TLSv1.2")
+				out.IOConfig.ConsumerProperties.SSLTruststoreLocation = stringPointer("/var/private/ssl/truststore.p12")
+				out.IOConfig.ConsumerProperties.SSLTruststorePassword = &DruidPasswordProvider{
+					Type:     "environment",
+					Variable: "DRUID_TRUSTSTORE_PASSWORD",
+				}
+				out.IOConfig.ConsumerProperties.SSLKeystoreLocation = stringPointer("/var/private/ssl/keystore.p12")
+				out.IOConfig.ConsumerProperties.SSLKeystorePassword = &DruidPasswordProvider{
+					Type:     "environment",
+					Variable: "DRUID_KEYSTORE_PASSWORD",
+				}
 				return out
 			}(),
 		},
@@ -230,6 +313,7 @@ func TestKafkaIngestionSpec(t *testing.T) {
 				test.topic,
 				test.brokers,
 				test.labels,
+				test.options...,
 			)
 			assert.Equal(t, test.expected, actual)
 		})
@@ -237,23 +321,48 @@ func TestKafkaIngestionSpec(t *testing.T) {
 }
 
 func TestKafkaIngestionSpec_MarshalJSON(t *testing.T) {
-	spec := NewKafkaIngestionSpec(
-		"test",
-		"test",
-		"test",
-		LabelSet{"instance", "job"},
-	)
-	actual, err := json.MarshalIndent(spec, "", "    ")
-	if err != nil {
-		t.Fatalf("unexpected error while marshalling: %v", err)
-	}
-	expected := []byte(jsonComplete)
-	assert.Equal(t, expected, actual, fmt.Sprintf("expected: %s\nactual: %s", string(expected), string(actual)))
+	t.Run("jsonBasic", func(t *testing.T) {
+		spec := NewKafkaIngestionSpec(
+			"test",
+			"test",
+			"test",
+			LabelSet{"instance", "job"},
+		)
+		actual, err := json.MarshalIndent(spec, "", "    ")
+		if err != nil {
+			t.Fatalf("unexpected error while marshalling: %v", err)
+		}
+		expected := []byte(jsonBasic)
+		assert.Equal(t, string(expected), string(actual), fmt.Sprintf("expected: %s\nactual: %s", string(expected), string(actual)))
 
-	var checkSpec *KafkaIngestionSpec
-	err = json.Unmarshal(actual, &checkSpec)
-	if err != nil {
-		t.Fatalf("unexpected error while unmarshalling: %v", err)
-	}
-	assert.Equal(t, spec, checkSpec)
+		var checkSpec *KafkaIngestionSpec
+		err = json.Unmarshal(actual, &checkSpec)
+		if err != nil {
+			t.Fatalf("unexpected error while unmarshalling: %v", err)
+		}
+		assert.Equal(t, spec, checkSpec)
+	})
+
+	t.Run("jsonSSL", func(t *testing.T) {
+		spec := NewKafkaIngestionSpec(
+			"test",
+			"test",
+			"test",
+			LabelSet{"instance", "job"},
+			ApplySSLConfig,
+		)
+		actual, err := json.MarshalIndent(spec, "", "    ")
+		if err != nil {
+			t.Fatalf("unexpected error while marshalling: %v", err)
+		}
+		expected := []byte(jsonSSL)
+		assert.Equal(t, string(expected), string(actual), fmt.Sprintf("expected: %s\nactual: %s", string(expected), string(actual)))
+
+		var checkSpec *KafkaIngestionSpec
+		err = json.Unmarshal(actual, &checkSpec)
+		if err != nil {
+			t.Fatalf("unexpected error while unmarshalling: %v", err)
+		}
+		assert.Equal(t, spec, checkSpec)
+	})
 }

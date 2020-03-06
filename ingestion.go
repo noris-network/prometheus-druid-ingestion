@@ -66,14 +66,61 @@ type IOConfig struct {
 }
 
 type ConsumerProperties struct {
-	BootstrapServers string `json:"bootstrap.servers"`
+	BootstrapServers      string                 `json:"bootstrap.servers"`
+	SecurityProtocol      *string                `json:"security.protocol,omitempty"`
+	SSLTruststoreType     *string                `json:"ssl.truststore.type,omitempty"`
+	SSLEnabledProtocols   *string                `json:"ssl.enabled.protocols,omitempty"`
+	SSLTruststoreLocation *string                `json:"ssl.truststore.location,omitempty"`
+	SSLTruststorePassword *DruidPasswordProvider `json:"ssl.truststore.password,omitempty"`
+	SSLKeystoreLocation   *string                `json:"ssl.keystore.location,omitempty"`
+	SSLKeystorePassword   *DruidPasswordProvider `json:"ssl.keystore.password,omitempty"`
 }
 
-func NewKafkaIngestionSpec(dataSource, topic, brokers string, labels LabelSet) *KafkaIngestionSpec {
-	return &KafkaIngestionSpec{
+type DruidPasswordProvider struct {
+	Type     string `json:"type"`
+	Variable string `json:"variable"`
+}
+
+type KafkaIngestionSpecOptions func(*KafkaIngestionSpec)
+
+func stringPointer(s string) *string {
+	return &s
+}
+
+func ApplySSLConfig(spec *KafkaIngestionSpec) {
+	spec.IOConfig.ConsumerProperties.SecurityProtocol = stringPointer("SSL")
+	spec.IOConfig.ConsumerProperties.SSLTruststoreType = stringPointer("PKCS12")
+	spec.IOConfig.ConsumerProperties.SSLEnabledProtocols = stringPointer("TLSv1.2")
+	spec.IOConfig.ConsumerProperties.SSLTruststoreLocation = stringPointer("/var/private/ssl/truststore.p12")
+	spec.IOConfig.ConsumerProperties.SSLTruststorePassword = &DruidPasswordProvider{
+		Type:     "environment",
+		Variable: "DRUID_TRUSTSTORE_PASSWORD",
+	}
+	spec.IOConfig.ConsumerProperties.SSLKeystoreLocation = stringPointer("/var/private/ssl/keystore.p12")
+	spec.IOConfig.ConsumerProperties.SSLKeystorePassword = &DruidPasswordProvider{
+		Type:     "environment",
+		Variable: "DRUID_KEYSTORE_PASSWORD",
+	}
+}
+
+func NewKafkaIngestionSpec(dataSource, topic, brokers string, labels LabelSet, options ...KafkaIngestionSpecOptions) *KafkaIngestionSpec {
+	spec := defaultKafkaIngestionSpec()
+	spec.DataSchema.DataSource = dataSource
+	spec.IOConfig.Topic = topic
+	spec.IOConfig.ConsumerProperties.BootstrapServers = brokers
+	spec.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = labels.ToFieldList()
+	spec.DataSchema.Parser.ParseSpec.DimensionsSpec.Dimensions = labels.ToDimensions()
+	for _, fn := range options {
+		fn(spec)
+	}
+	return spec
+}
+
+func defaultKafkaIngestionSpec() *KafkaIngestionSpec {
+	spec := &KafkaIngestionSpec{
 		Type: "kafka",
 		DataSchema: DataSchema{
-			DataSource: dataSource,
+			DataSource: "prometheus",
 			Parser: Parser{
 				Type: "string",
 				ParseSpec: ParseSpec{
@@ -83,10 +130,10 @@ func NewKafkaIngestionSpec(dataSource, topic, brokers string, labels LabelSet) *
 						Format: "iso",
 					},
 					FlattenSpec: FlattenSpec{
-						Fields: labels.ToFieldList(),
+						Fields: FieldList{},
 					},
 					DimensionsSpec: DimensionsSpec{
-						Dimensions: labels.ToDimensions(),
+						Dimensions: []string{},
 					},
 				},
 			},
@@ -97,8 +144,8 @@ func NewKafkaIngestionSpec(dataSource, topic, brokers string, labels LabelSet) *
 				},
 				{
 					Name:      "value",
-					FieldName: "value",
 					Type:      "doubleMax",
+					FieldName: "value",
 				},
 			},
 			GranularitySpec: GranularitySpec{
@@ -108,12 +155,13 @@ func NewKafkaIngestionSpec(dataSource, topic, brokers string, labels LabelSet) *
 			},
 		},
 		IOConfig: IOConfig{
-			Topic: topic,
+			Topic: "prometheus",
 			ConsumerProperties: ConsumerProperties{
-				BootstrapServers: brokers,
+				BootstrapServers: "kafka01:9090,kafka02:9090,kafka03:9090",
 			},
 			TaskDuration:      "PT10M",
 			UseEarliestOffset: true,
 		},
 	}
+	return spec
 }
