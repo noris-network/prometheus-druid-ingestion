@@ -1,4 +1,4 @@
-package modify
+package prometheus_kafka_adapter_druid_ingestion
 
 type KafkaIngestionSpec struct {
 	Type       string     `json:"type"`

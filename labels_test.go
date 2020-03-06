@@ -1,4 +1,4 @@
-package modify
+package prometheus_kafka_adapter_druid_ingestion
 
 import (
 	"github.com/prometheus/common/model"

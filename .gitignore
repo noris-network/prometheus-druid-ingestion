@@ -1,1 +1,8 @@
 .idea/
+bin/*
+
+
+
+
+# Below needs to be the last line of this file
+!.gitkeep

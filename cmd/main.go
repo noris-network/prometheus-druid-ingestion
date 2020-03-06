@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/noris-network/prometheus-druid-ingestion/modify"
+	ingestion "github.com/noris-network/prometheus-druid-ingestion"
 	"github.com/prometheus/client_golang/api"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/api/prometheus/v1"
 	"net"
 	"net/http"
 	"os"
@@ -44,7 +44,7 @@ func main() {
 	if len(warnings) > 0 {
 		fmt.Printf("Warnings: %v\n", warnings)
 	}
-	l, err := modify.ExtractUniqueLabels(result)
+	l, err := ingestion.ExtractUniqueLabels(result)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
