@@ -32,22 +32,22 @@ and the Kafka brokers to consume the metrics from.
 ## Usage
 
 ```text
-$ generate-ingestion -h
-  Generate a Druid.io ingestion spec from a Prometheus query result
-  
-  Usage:
-    generate-ingestion [flags]
-  
-  Flags:
-    -a, --address string             The address of the Prometheus server to send the query to (default "http://prometheus:9090")
-    -d, --druid-data-source string   The druid data source (default "prometheus")
-    -f, --file string                The file to save the ingestion spec to
-    -h, --help                       help for generate-ingestion
-    -b, --kafka-brokers string       The Kafka brokers for druid to ingest data from (default "kafka01:9092,kafka02:9092,kafka03:9092")
-    -t, --kafka-topic string         The Kafka topic for druid to ingest data from (default "prometheus")
-    -q, --query string               The query to send to the Prometheus server (default "{__name__=~\"job:.+\"}")
-        --tls-skip-verify            Skip TLS certificate verification
-    -o, --toStdout                   Prints the JSON ingestion spec to STDOUT (default true)
+$ ./bin/generate-ingestion -h
+
+Usage:
+  generate-ingestion [flags]
+
+Flags:
+  -a, --address string             The address of the Prometheus server to send the query to (default "http://prometheus:9090")
+  -d, --druid-data-source string   The druid data source (default "prometheus")
+  -f, --file string                The file to save the ingestion spec to
+  -h, --help                       help for generate-ingestion
+      --ingest-via-ssl             Enables data ingestion from Kafka to Druid via SSL (default true)
+  -b, --kafka-brokers string       The Kafka brokers for druid to ingest data from (default "kafka01:9092,kafka02:9092,kafka03:9092")
+  -t, --kafka-topic string         The Kafka topic for druid to ingest data from (default "prometheus")
+  -q, --query string               The query to send to the Prometheus server (default "{__name__=~\"job:.+\"}")
+      --tls-skip-verify            Skip TLS certificate verification
+  -o, --toStdout                   Prints the JSON ingestion spec to STDOUT (default true)
 ```
 
 Executing the file sends the query specified with the `-q` / `--query` flag to a Prometheus server
