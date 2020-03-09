@@ -1,4 +1,4 @@
-package prometheus_kafka_adapter_druid_ingestion
+package ingestion
 
 import (
 	"encoding/json"
@@ -209,12 +209,12 @@ func TestKafkaIngestionSpec(t *testing.T) {
 				out.IOConfig.ConsumerProperties.SSLTruststoreType = stringPointer("PKCS12")
 				out.IOConfig.ConsumerProperties.SSLEnabledProtocols = stringPointer("TLSv1.2")
 				out.IOConfig.ConsumerProperties.SSLTruststoreLocation = stringPointer("/var/private/ssl/truststore.p12")
-				out.IOConfig.ConsumerProperties.SSLTruststorePassword = &DruidPasswordProvider{
+				out.IOConfig.ConsumerProperties.SSLTruststorePassword = &PasswordProvider{
 					Type:     "environment",
 					Variable: "DRUID_TRUSTSTORE_PASSWORD",
 				}
 				out.IOConfig.ConsumerProperties.SSLKeystoreLocation = stringPointer("/var/private/ssl/keystore.p12")
-				out.IOConfig.ConsumerProperties.SSLKeystorePassword = &DruidPasswordProvider{
+				out.IOConfig.ConsumerProperties.SSLKeystorePassword = &PasswordProvider{
 					Type:     "environment",
 					Variable: "DRUID_KEYSTORE_PASSWORD",
 				}
@@ -296,12 +296,12 @@ func TestKafkaIngestionSpec(t *testing.T) {
 				out.IOConfig.ConsumerProperties.SSLTruststoreType = stringPointer("PKCS12")
 				out.IOConfig.ConsumerProperties.SSLEnabledProtocols = stringPointer("TLSv1.2")
 				out.IOConfig.ConsumerProperties.SSLTruststoreLocation = stringPointer("/var/private/ssl/truststore.p12")
-				out.IOConfig.ConsumerProperties.SSLTruststorePassword = &DruidPasswordProvider{
+				out.IOConfig.ConsumerProperties.SSLTruststorePassword = &PasswordProvider{
 					Type:     "environment",
 					Variable: "DRUID_TRUSTSTORE_PASSWORD",
 				}
 				out.IOConfig.ConsumerProperties.SSLKeystoreLocation = stringPointer("/var/private/ssl/keystore.p12")
-				out.IOConfig.ConsumerProperties.SSLKeystorePassword = &DruidPasswordProvider{
+				out.IOConfig.ConsumerProperties.SSLKeystorePassword = &PasswordProvider{
 					Type:     "environment",
 					Variable: "DRUID_KEYSTORE_PASSWORD",
 				}

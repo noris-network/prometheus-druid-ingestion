@@ -1,4 +1,4 @@
-package prometheus_kafka_adapter_druid_ingestion
+package ingestion
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 // LabelSet is a unique set of Prometheus labels.
 type LabelSet []string
 
+// ToFieldList converts a LabelSet to a FieldList
 func (labels LabelSet) ToFieldList() FieldList {
 	fields := FieldList{}
 
@@ -38,6 +39,8 @@ func (labels LabelSet) ToFieldList() FieldList {
 	return fields
 }
 
+// ToDimensions converts a LabelSet to a slice of strings that can be used
+// for Druids Dimensions. It also adds the dimension 'name' to the slice.
 func (labels LabelSet) ToDimensions() []string {
 	if len(labels) == 0 {
 		return []string{}
@@ -50,8 +53,7 @@ func (labels LabelSet) ToDimensions() []string {
 	return dimensions
 }
 
-// ExtractUniqueLabels extrnilacts the unique labels from a Prometheus query
-// result.
+// ExtractUniqueLabels extracts unique labels from a Prometheus query  result.
 func ExtractUniqueLabels(result model.Value) (LabelSet, error) {
 	vec, ok := result.(model.Vector)
 	if !ok {
@@ -67,7 +69,7 @@ func ExtractUniqueLabels(result model.Value) (LabelSet, error) {
 			if key == "__name__" {
 				continue
 			}
-			// If we have not seen this label before, add it to the list.
+			// If we haven't seen this label before, add it to the list.
 			if _, ok := labelSeen[key]; !ok {
 				labels = append(labels, key)
 				labelSeen[key] = true
