@@ -366,3 +366,43 @@ func TestKafkaIngestionSpec_MarshalJSON(t *testing.T) {
 		assert.Equal(t, spec, checkSpec)
 	})
 }
+
+var result *KafkaIngestionSpec
+
+func BenchmarkNewKafkaIngestionSpec(b *testing.B) {
+	var spec *KafkaIngestionSpec
+	for i := 0; i < b.N; i++ {
+		spec = NewKafkaIngestionSpec(
+			SetDataSource("raw.prometheus"),
+			SetBrokers("kafka01:9092,kafka02:9092"),
+			SetLabels(LabelSet{"job", "instance", "source", "namespace"}),
+			ApplySSLConfig(),
+		)
+	}
+	result = spec
+}
+
+var resultJSON []byte
+
+func BenchmarkNewKafkaIngestionSpecMarshalJSON(b *testing.B) {
+	var (
+		spec   *KafkaIngestionSpec
+		actual []byte
+		err    error
+	)
+
+	for i := 0; i < b.N; i++ {
+		spec = NewKafkaIngestionSpec(
+			SetDataSource("raw.prometheus"),
+			SetBrokers("kafka01:9092,kafka02:9092"),
+			SetLabels(LabelSet{"job", "instance", "source", "namespace"}),
+			ApplySSLConfig(),
+		)
+		actual, err = json.MarshalIndent(spec, "", "    ")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	result = spec
+	resultJSON = actual
+}

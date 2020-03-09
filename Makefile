@@ -8,6 +8,8 @@ GOARCH ?= amd64
 GOOS ?= linux
 DOCKER_IMAGE_NAME = noris-network/prometheus-kafka-druid-ingestion
 DOCKER_IMAGE_TAG = v0.1.0
+TEST_ARGS = -v
+BENCH_ARGS = -benchmen
 
 .PHONY: help
 ## help: prints this help message
@@ -23,7 +25,12 @@ lint:
 .PHONY: test
 ## test: runs unit tests
 test:
-	$(GO) test -v ./...
+	$(GO) test $(TEST_ARGS) ./...
+
+.PHONU: bench
+## bench: runs benchmarking tests
+bench:
+	$(GO) test -benchmem -bench=.
 
 .PHONY: build
 ## build: builds Go binary
