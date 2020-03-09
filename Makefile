@@ -15,6 +15,11 @@ help:
 	@echo -e "Usage: \n"
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' |  sed -e 's/^/ /'
 
+.PHONY: lint
+## lint: runs golint
+lint:
+	golint
+
 .PHONY: test
 ## test: runs unit tests
 test:
