@@ -167,20 +167,18 @@ var (
 
 func TestKafkaIngestionSpec(t *testing.T) {
 	var testData = []struct {
-		name       string
-		dataSource string
-		topic      string
-		brokers    string
-		labels     LabelSet
-		options    []KafkaIngestionSpecOptions
-		expected   *KafkaIngestionSpec
+		name     string
+		options  []KafkaIngestionSpecOptions
+		expected *KafkaIngestionSpec
 	}{
 		{
-			name:       "empty labels",
-			dataSource: "test",
-			topic:      "test",
-			brokers:    "test",
-			labels:     LabelSet{},
+			name: "empty labels",
+			options: []KafkaIngestionSpecOptions{
+				SetDataSource("test"),
+				SetTopic("test"),
+				SetBrokers("test"),
+				SetLabels(LabelSet{}),
+			},
 			expected: func() *KafkaIngestionSpec {
 				out := defaultKafkaIngestionSpec()
 				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{}
@@ -192,12 +190,14 @@ func TestKafkaIngestionSpec(t *testing.T) {
 			}(),
 		},
 		{
-			name:       "empty labels, ssl options",
-			dataSource: "test",
-			topic:      "test",
-			brokers:    "test",
-			labels:     LabelSet{},
-			options:    []KafkaIngestionSpecOptions{ApplySSLConfig},
+			name: "empty labels, ssl options",
+			options: []KafkaIngestionSpecOptions{
+				ApplySSLConfig(),
+				SetDataSource("test"),
+				SetTopic("test"),
+				SetBrokers("test"),
+				SetLabels(LabelSet{}),
+			},
 			expected: func() *KafkaIngestionSpec {
 				out := defaultKafkaIngestionSpec()
 				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{}
@@ -222,11 +222,13 @@ func TestKafkaIngestionSpec(t *testing.T) {
 			}(),
 		},
 		{
-			name:       "single label",
-			dataSource: "test",
-			topic:      "test",
-			brokers:    "test",
-			labels:     LabelSet{"foo"},
+			name: "single label",
+			options: []KafkaIngestionSpecOptions{
+				SetDataSource("test"),
+				SetTopic("test"),
+				SetBrokers("test"),
+				SetLabels(LabelSet{"foo"}),
+			},
 			expected: func() *KafkaIngestionSpec {
 				out := defaultKafkaIngestionSpec()
 				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{
@@ -254,12 +256,14 @@ func TestKafkaIngestionSpec(t *testing.T) {
 			}(),
 		},
 		{
-			name:       "multiple labels, ssl config",
-			dataSource: "test",
-			topic:      "test",
-			brokers:    "test",
-			labels:     LabelSet{"foo", "bar"},
-			options:    []KafkaIngestionSpecOptions{ApplySSLConfig},
+			name: "multiple labels, ssl config",
+			options: []KafkaIngestionSpecOptions{
+				ApplySSLConfig(),
+				SetDataSource("test"),
+				SetTopic("test"),
+				SetBrokers("test"),
+				SetLabels(LabelSet{"foo", "bar"}),
+			},
 			expected: func() *KafkaIngestionSpec {
 				out := defaultKafkaIngestionSpec()
 				out.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = FieldList{
@@ -309,10 +313,6 @@ func TestKafkaIngestionSpec(t *testing.T) {
 	for _, test := range testData {
 		t.Run(test.name, func(t *testing.T) {
 			actual := NewKafkaIngestionSpec(
-				test.dataSource,
-				test.topic,
-				test.brokers,
-				test.labels,
 				test.options...,
 			)
 			assert.Equal(t, test.expected, actual)
@@ -323,10 +323,10 @@ func TestKafkaIngestionSpec(t *testing.T) {
 func TestKafkaIngestionSpec_MarshalJSON(t *testing.T) {
 	t.Run("jsonBasic", func(t *testing.T) {
 		spec := NewKafkaIngestionSpec(
-			"test",
-			"test",
-			"test",
-			LabelSet{"instance", "job"},
+			SetDataSource("test"),
+			SetTopic("test"),
+			SetBrokers("test"),
+			SetLabels(LabelSet{"instance", "job"}),
 		)
 		actual, err := json.MarshalIndent(spec, "", "    ")
 		if err != nil {
@@ -345,11 +345,11 @@ func TestKafkaIngestionSpec_MarshalJSON(t *testing.T) {
 
 	t.Run("jsonSSL", func(t *testing.T) {
 		spec := NewKafkaIngestionSpec(
-			"test",
-			"test",
-			"test",
-			LabelSet{"instance", "job"},
-			ApplySSLConfig,
+			ApplySSLConfig(),
+			SetDataSource("test"),
+			SetTopic("test"),
+			SetBrokers("test"),
+			SetLabels(LabelSet{"instance", "job"}),
 		)
 		actual, err := json.MarshalIndent(spec, "", "    ")
 		if err != nil {

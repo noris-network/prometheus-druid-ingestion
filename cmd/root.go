@@ -90,12 +90,17 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	var opts []ingestion.KafkaIngestionSpecOptions
+	opts := []ingestion.KafkaIngestionSpecOptions{
+		ingestion.SetDataSource(druidDataSource),
+		ingestion.SetTopic(kafkaTopic),
+		ingestion.SetBrokers(kafkaBrokers),
+		ingestion.SetLabels(l),
+	}
 	if ingestSSL {
-		opts = append(opts, ingestion.ApplySSLConfig)
+		opts = append(opts, ingestion.ApplySSLConfig())
 	}
 
-	spec := ingestion.NewKafkaIngestionSpec(druidDataSource, kafkaTopic, kafkaBrokers, l, opts...)
+	spec := ingestion.NewKafkaIngestionSpec(opts...)
 	jsonSpec, err := json.MarshalIndent(spec, "", "    ")
 	if err != nil {
 		fmt.Printf("Error marshalling ingestion spec: %v\n", err)

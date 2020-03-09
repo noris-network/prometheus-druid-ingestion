@@ -81,41 +81,6 @@ type DruidPasswordProvider struct {
 	Variable string `json:"variable"`
 }
 
-type KafkaIngestionSpecOptions func(*KafkaIngestionSpec)
-
-func stringPointer(s string) *string {
-	return &s
-}
-
-func ApplySSLConfig(spec *KafkaIngestionSpec) {
-	spec.IOConfig.ConsumerProperties.SecurityProtocol = stringPointer("SSL")
-	spec.IOConfig.ConsumerProperties.SSLTruststoreType = stringPointer("PKCS12")
-	spec.IOConfig.ConsumerProperties.SSLEnabledProtocols = stringPointer("TLSv1.2")
-	spec.IOConfig.ConsumerProperties.SSLTruststoreLocation = stringPointer("/var/private/ssl/truststore.p12")
-	spec.IOConfig.ConsumerProperties.SSLTruststorePassword = &DruidPasswordProvider{
-		Type:     "environment",
-		Variable: "DRUID_TRUSTSTORE_PASSWORD",
-	}
-	spec.IOConfig.ConsumerProperties.SSLKeystoreLocation = stringPointer("/var/private/ssl/keystore.p12")
-	spec.IOConfig.ConsumerProperties.SSLKeystorePassword = &DruidPasswordProvider{
-		Type:     "environment",
-		Variable: "DRUID_KEYSTORE_PASSWORD",
-	}
-}
-
-func NewKafkaIngestionSpec(dataSource, topic, brokers string, labels LabelSet, options ...KafkaIngestionSpecOptions) *KafkaIngestionSpec {
-	spec := defaultKafkaIngestionSpec()
-	spec.DataSchema.DataSource = dataSource
-	spec.IOConfig.Topic = topic
-	spec.IOConfig.ConsumerProperties.BootstrapServers = brokers
-	spec.DataSchema.Parser.ParseSpec.FlattenSpec.Fields = labels.ToFieldList()
-	spec.DataSchema.Parser.ParseSpec.DimensionsSpec.Dimensions = labels.ToDimensions()
-	for _, fn := range options {
-		fn(spec)
-	}
-	return spec
-}
-
 func defaultKafkaIngestionSpec() *KafkaIngestionSpec {
 	spec := &KafkaIngestionSpec{
 		Type: "kafka",
@@ -162,6 +127,14 @@ func defaultKafkaIngestionSpec() *KafkaIngestionSpec {
 			TaskDuration:      "PT10M",
 			UseEarliestOffset: true,
 		},
+	}
+	return spec
+}
+
+func NewKafkaIngestionSpec(options ...KafkaIngestionSpecOptions) *KafkaIngestionSpec {
+	spec := defaultKafkaIngestionSpec()
+	for _, fn := range options {
+		fn(spec)
 	}
 	return spec
 }
