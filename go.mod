@@ -1,4 +1,4 @@
-module github.com/noris-network/prometheus-kafka-adapter-druid-ingestion
+module github.com/noris-network/prometheus-druid-ingestion
 
 go 1.13
 
